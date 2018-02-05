@@ -1,11 +1,9 @@
 package handler
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
-
-	"encoding/json"
-
 	"time"
 
 	"github.com/sharykhin/todoapp/repository/todo"
@@ -14,7 +12,7 @@ import (
 )
 
 // Get list of todos
-func Index(w http.ResponseWriter, r *http.Request, repository todo.Repository) {
+func Index(w http.ResponseWriter, r *http.Request, repository todo.Repositier) {
 	var limit string = "10"
 	var offset string = "0"
 
@@ -38,7 +36,7 @@ func Index(w http.ResponseWriter, r *http.Request, repository todo.Repository) {
 }
 
 // Create a new todo
-func Create(w http.ResponseWriter, r *http.Request, repository todo.Repository) {
+func Create(w http.ResponseWriter, r *http.Request, repository todo.Repositier) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 

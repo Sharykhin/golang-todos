@@ -5,7 +5,7 @@ import (
 	"github.com/sharykhin/todoapp/request"
 )
 
-type Repository interface {
+type Repositier interface {
 	Get(limit, offset string) ([]entity.Todo, error)
 	Create(rt request.Todo) (*entity.Todo, error)
 }

@@ -16,8 +16,11 @@ func main() {
 
 	// TODO: routes can be moved to somewhere else I guess
 	http.Handle("/", middleware.Logger(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//Resolve dependencies
 		sqlRepository := sql.TodoRepository{DB: p.Storage}
-		handler.Index(w, r, sqlRepository)
+		// Initialize appropriate handler
+		th := handler.TodoHandler{Handler: handler.Handler{}}
+		th.Index(w, r, sqlRepository)
 	})))
 
 	// TODO: need somehow hanlde method request, I guess that could be reach through middleware
