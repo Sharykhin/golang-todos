@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"strconv"
+
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/sharykhin/todoapp/entity"
 	"github.com/sharykhin/todoapp/request"
@@ -34,6 +36,24 @@ func (tr TodoRepository) Get(limit, offset string) ([]entity.Todo, error) {
 	}
 	rows.Close()
 	return todos, nil
+}
+
+func (tr TodoRepository) Count() (*int, error) {
+	var count string
+	stmt, err := tr.DB.Prepare("SELECT COUNT(id) as `total` FROM todos")
+	if err != nil {
+		return nil, fmt.Errorf("could not make select statement:%v", err)
+	}
+	defer stmt.Close()
+	err = stmt.QueryRow().Scan(&count)
+	if err != nil {
+		return nil, fmt.Errorf("could not make scan: %v", err)
+	}
+	i, err := strconv.Atoi(count)
+	if err != nil {
+		return nil, fmt.Errorf("could not convert string to number: %v", err)
+	}
+	return &i, nil
 }
 
 func (tr TodoRepository) Create(rt request.Todo) (*entity.Todo, error) {

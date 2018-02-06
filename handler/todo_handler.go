@@ -16,7 +16,7 @@ type TodoHandler struct {
 func (th TodoHandler) Index(w http.ResponseWriter, r *http.Request, repository todo.Repositier) {
 	limit := th.Handler.queryParam(r, "limit", "10")
 	offset := th.Handler.queryParam(r, "offset", "0")
-
+	//TODO: so we have two functions that should be run in a separate goroutines
 	todos, err := repository.Get(limit, offset)
 
 	if err != nil {
@@ -24,7 +24,13 @@ func (th TodoHandler) Index(w http.ResponseWriter, r *http.Request, repository t
 		return
 	}
 
-	th.Handler.success(w, todos)
+	count, err := repository.Count()
+	if err != nil {
+		th.Handler.serverError(w, err)
+		return
+	}
+
+	th.Handler.success(w, todos, map[string]interface{}{"total": count, "count": len(todos)})
 }
 
 func (th TodoHandler) Create(w http.ResponseWriter, r *http.Request, repository todo.Repositier) {
@@ -47,5 +53,5 @@ func (th TodoHandler) Create(w http.ResponseWriter, r *http.Request, repository 
 		th.Handler.serverError(w, err)
 		return
 	}
-	th.Handler.success(w, t)
+	th.Handler.success(w, t, map[string]interface{}{})
 }

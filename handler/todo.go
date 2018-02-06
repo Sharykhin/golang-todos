@@ -27,11 +27,11 @@ func Index(w http.ResponseWriter, r *http.Request, repository todo.Repositier) {
 
 	if err != nil {
 		log.Println(err)
-		res, _ := response.NewJson(w, http.StatusInternalServerError, response.Response{false, nil, err})
+		res, _ := response.NewJson(w, http.StatusInternalServerError, response.Response{false, nil, err, map[string]interface{}{}})
 		w.Write(res)
 		return
 	}
-	res, _ := response.NewJson(w, http.StatusOK, response.Response{true, todos, nil})
+	res, _ := response.NewJson(w, http.StatusOK, response.Response{true, todos, nil, map[string]interface{}{}})
 	w.Write(res)
 }
 
@@ -44,7 +44,7 @@ func Create(w http.ResponseWriter, r *http.Request, repository todo.Repositier) 
 	err := decoder.Decode(&rt)
 	if err != nil {
 		log.Println(err)
-		res, _ := response.NewJson(w, http.StatusInternalServerError, response.Response{false, nil, err.Error()})
+		res, _ := response.NewJson(w, http.StatusInternalServerError, response.Response{false, nil, err.Error(), map[string]interface{}{}})
 		w.Write(res)
 		return
 	}
@@ -53,10 +53,10 @@ func Create(w http.ResponseWriter, r *http.Request, repository todo.Repositier) 
 	t, err := repository.Create(rt)
 	if err != nil {
 		log.Println(err)
-		res, _ := response.NewJson(w, http.StatusInternalServerError, response.Response{false, nil, err.Error()})
+		res, _ := response.NewJson(w, http.StatusInternalServerError, response.Response{false, nil, err.Error(), map[string]interface{}{}})
 		w.Write(res)
 		return
 	}
-	res, _ := response.NewJson(w, http.StatusCreated, response.Response{true, t, nil})
+	res, _ := response.NewJson(w, http.StatusCreated, response.Response{true, t, nil, map[string]interface{}{}})
 	w.Write(res)
 }

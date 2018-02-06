@@ -8,4 +8,5 @@ import (
 type Repositier interface {
 	Get(limit, offset string) ([]entity.Todo, error)
 	Create(rt request.Todo) (*entity.Todo, error)
+	Count() (*int, error)
 }
