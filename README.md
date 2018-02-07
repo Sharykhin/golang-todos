@@ -33,8 +33,8 @@ GET /?limit={num}&offset={num}
 Status: 200 OK
 ```
 Filter params:
-- *limit*  - number | default:10. Number of todos that should be return in response
-- *offset* - number | default:0. The offset of todos in response
+- *limit*  - number | default:10. Number of todos that should be return in a response
+- *offset* - number | default:0. The offset of todos in a response
 
 JSON-out:
 ```json
@@ -88,4 +88,4 @@ JSON-out:
 
 Questions:
 ----------
-Find all `@QUESTION` comments for getting questions list.
+Find all `@QUESTION` comments for getting question list.
