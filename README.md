@@ -18,7 +18,7 @@ docker build -t golang-todoapp .
 
 2. Run container:
 ```bash
-docker run --publish 8082:8082 --name todoapp_service --rm golang-todoapp
+docker run -p 8082:8082 golang-todoapp --rm golang-todoapp
 ```
 
 3. Go to http://localhost:8082
@@ -75,12 +75,13 @@ JSON-out:
 {
     "success": true,
     "data": {
-        "id": 17,
+        "id": 18,
         "title": "fix tood",
         "description": "fix todo lost",
         "completed": false,
-        "created": "Mon, 05 Feb 2018 13:49:15 UTC"
+        "created": "Wed, 07 Feb 2018 07:35:43 UTC"
     },
-    "error": null
+    "error": null,
+    "meta": {}
 }
 ```
