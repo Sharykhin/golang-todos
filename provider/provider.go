@@ -8,13 +8,13 @@ import (
 	"github.com/sharykhin/todoapp/service/storage"
 )
 
-type provider struct {
+type Provider struct {
 	Initialized bool
 	Storage     *sql.DB
 }
 
-func Register() *provider {
-	var provider provider
+func Register() *Provider {
+	var provider Provider
 	db, err := storage.NewSQL(config.DB_DRIVER, config.DB_SOURCE)
 	if err != nil {
 		log.Fatal(err)

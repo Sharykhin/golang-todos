@@ -1,12 +1,14 @@
 package todo
 
 import (
+	"context"
+
 	"github.com/sharykhin/todoapp/entity"
 	"github.com/sharykhin/todoapp/request"
 )
 
 type Repositier interface {
-	Get(limit, offset string) ([]entity.Todo, error)
-	Create(rt request.Todo) (*entity.Todo, error)
-	Count() (*int, error)
+	Get(ctx context.Context, limit, offset int) (*[]entity.Todo, error)
+	Create(ctx context.Context, rt request.Todo) (*entity.Todo, error)
+	Count(ctx context.Context) (int, error)
 }
