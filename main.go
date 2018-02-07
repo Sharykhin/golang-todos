@@ -29,5 +29,5 @@ func main() {
 		handler.Create(w, r, sqlRepository)
 	})))
 	// TODO: this one might be taken from env variable.
-	http.ListenAndServe("localhost:8082", nil)
+	http.ListenAndServe(":8082", nil)
 }
