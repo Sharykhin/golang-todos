@@ -6,27 +6,15 @@ import (
 	"sync"
 	"time"
 
+	db "github.com/Sharykhin/golang-todos/database"
 	"github.com/Sharykhin/golang-todos/entity"
-	"github.com/Sharykhin/golang-todos/provider"
-	"github.com/Sharykhin/golang-todos/repository/todo"
-	"github.com/Sharykhin/golang-todos/repository/todo/sql"
 )
-
-var (
-	repository todo.Repositier
-)
-
-func init() {
-	// @QUESTION:
-	// Should we register some global dependencies somewhere. Currently I mean databases connection?
-	p := provider.Register()
-	repository = sql.TodoRepository{DB: p.Storage}
-}
 
 // Index returns list of todos
-func Index(ctx context.Context, limit, offset int) (*[]entity.Todo, int, error) {
+func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
-	chTodos := make(chan *[]entity.Todo)
+	defer cancel()
+	chTodos := make(chan []entity.Todo)
 	defer close(chTodos)
 	chCount := make(chan int)
 	defer close(chCount)
@@ -35,7 +23,7 @@ func Index(ctx context.Context, limit, offset int) (*[]entity.Todo, int, error) 
 	done := make(chan bool)
 	defer close(done)
 
-	var todos *[]entity.Todo
+	var todos []entity.Todo
 	var count int
 	var wg sync.WaitGroup
 
@@ -68,14 +56,14 @@ func Index(ctx context.Context, limit, offset int) (*[]entity.Todo, int, error) 
 }
 
 // Create creates new todo
-func Create(ctx context.Context, rt *entity.CreateParams) (*entity.Todo, error) {
+func Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 	rt.Created = time.Now().UTC()
-	return repository.Create(ctx, rt)
+	return db.Create(ctx, rt)
 }
 
-func getList(ctx context.Context, limit, offset int, chTodos chan<- *[]entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
+func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	todos, err := repository.Get(ctx, limit, offset)
+	todos, err := db.Get(ctx, limit, offset)
 	if err != nil {
 		chErr <- fmt.Errorf("could not get all todos: %s", err)
 	}
@@ -84,7 +72,7 @@ func getList(ctx context.Context, limit, offset int, chTodos chan<- *[]entity.To
 
 func getCount(ctx context.Context, chCount chan<- int, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
-	count, err := repository.Count(ctx)
+	count, err := db.Count(ctx)
 	if err != nil {
 		chErr <- fmt.Errorf("could not get count of todos: %s", err)
 	}
