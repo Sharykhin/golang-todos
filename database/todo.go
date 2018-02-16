@@ -44,7 +44,7 @@ func Get(ctx context.Context, limit, offset int) ([]entity.Todo, error) {
 // Count returns all count of todos
 func Count(ctx context.Context) (int, error) {
 	var count int
-	row := db.QueryRowContext(ctx, "SELECT COUNT(id) AS `total` FROM todos")
+	row := db.QueryRowContext(ctx, "SELECT COUND(id) AS `total` FROM todos")
 	err := row.Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("could not make scan: %v", err)
