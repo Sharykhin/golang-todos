@@ -15,7 +15,7 @@ func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// So closing in defer way may create unobvious error of sending value to a closed channel. If error occurs
+	// So closing in defer way may create not obvious error of sending value to a closed channel. If error occurs
 	// somewhere select statement get it and make a return hence all defer's are called and while gorouting a still running
 	// they may try to send a value to a closed channel and panic will be thrown
 	chTodos := make(chan []entity.Todo)
@@ -23,6 +23,8 @@ func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	chCount := make(chan int)
 	//defer close(chCount)
 	chErr := make(chan error)
+	// Since we have a few suppliers of error we can't close channel in a specific goroutine, that's why we can close it
+	// in defer by rely on context.Canceled property of ctx.Err() method
 	defer close(chErr)
 	done := make(chan struct{})
 	//defer close(done)
