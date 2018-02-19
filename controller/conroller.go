@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	db "github.com/Sharykhin/golang-todos/database"
 	"github.com/Sharykhin/golang-todos/entity"
 )
+//TODO: is it good way to move all package method to variables just allowing them to be mocked
+var create = db.Create
 
 // Index returns list of todos
 func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
@@ -58,12 +59,14 @@ func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 
 // Create creates new todo
 func Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
-	rt.Created = time.Now().UTC()
-	return db.Create(ctx, rt)
+	// TODO: narrow case, how to provide the exact utc time
+	//rt.Created = time.Now().UTC()
+	return create(ctx, rt)
 }
 
 func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer close(chTodos)
 	todos, err := db.Get(ctx, limit, offset)
 	if err != nil {
 		if ctx.Err() == context.Canceled {
@@ -72,12 +75,12 @@ func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Tod
 		chErr <- fmt.Errorf("could not get all todos: %s", err)
 	} else {
 		chTodos <- todos
-		close(chTodos)
 	}
 }
 
 func getCount(ctx context.Context, chCount chan<- int, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer close(chCount)
 	count, err := db.Count(ctx)
 	if err != nil {
 		if ctx.Err() == context.Canceled {
@@ -86,7 +89,6 @@ func getCount(ctx context.Context, chCount chan<- int, chErr chan<- error, wg *s
 		chErr <- fmt.Errorf("could not get count of todos: %s", err)
 	} else {
 		chCount <- count
-		close(chCount)
 	}
 }
 

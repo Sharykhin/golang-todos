@@ -9,6 +9,7 @@ import (
 	"github.com/Sharykhin/golang-todos/entity"
 	"github.com/Sharykhin/golang-todos/utils"
 	_ "github.com/mattn/go-sqlite3" // we need it!
+	"time"
 )
 
 var db *sql.DB
@@ -67,7 +68,7 @@ func Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 		Title:       rt.Title,
 		Description: rt.Description,
 		Completed:   rt.Completed,
-		Created:     utils.JSONTime(rt.Created),
+		Created:     utils.JSONTime(time.Now().UTC()),
 	}
 	return &t, nil
 }
