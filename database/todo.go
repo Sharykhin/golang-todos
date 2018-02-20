@@ -14,8 +14,10 @@ import (
 
 var db *sql.DB
 
+// Storage struct is responsible for managing todos in a database
 type Storage struct {}
 
+// Create calls a package method for creating a new item
 func (s Storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 	return Create(ctx, rt)
 }
