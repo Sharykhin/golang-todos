@@ -11,6 +11,17 @@ import (
 //TODO: is it good way to move all package method to variables just allowing them to be mocked
 var create = db.Create
 
+// TodoCreator interface describes creation method
+type TodoCreator interface {
+	Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
+}
+
+// TodoGetter interface describes methods for getting some todos
+type TodoGetter interface {
+	Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
+	Count(ctx context.Context) (int, error)
+}
+
 // Index returns list of todos
 func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -58,10 +69,10 @@ func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 }
 
 // Create creates new todo
-func Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
+func Create(ctx context.Context, rt entity.CreateParams, tc TodoCreator) (*entity.Todo, error) {
 	// TODO: narrow case, how to provide the exact utc time
 	//rt.Created = time.Now().UTC()
-	return create(ctx, rt)
+	return tc.Create(ctx, rt)
 }
 
 func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Sharykhin/golang-todos/controller"
 	"github.com/Sharykhin/golang-todos/entity"
+	"github.com/Sharykhin/golang-todos/database"
 )
 
 var (
@@ -42,7 +43,9 @@ func create(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	t, err := todoCreate(r.Context(), rt)
+
+	// Pass the storage as parameter
+	t, err := todoCreate(r.Context(), rt, database.Storage{})
 	if err != nil {
 		serverError(w, err)
 		return

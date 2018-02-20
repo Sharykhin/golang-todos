@@ -6,34 +6,24 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/Sharykhin/golang-todos/entity"
 	"context"
-	"time"
-	"github.com/Sharykhin/golang-todos/utils"
-	"errors"
+	"github.com/pkg/errors"
 )
 
-type mockCreate struct {
+type mockStorage struct {
 	mock.Mock
 }
 
-func (m mockCreate) successCreate(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
+func (m mockStorage) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 	ret := m.Called(ctx, rt)
-	return ret.Get(0).(*entity.Todo), nil
-}
-
-func (m mockCreate) errorCreate(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
-	ret := m.Called(ctx, rt)
-	return nil, ret.Get(1).(error)
+	t, err := ret.Get(0), ret.Get(1)
+	if err != nil {
+		return nil, err.(error)
+	}
+	return t.(*entity.Todo), nil
 }
 
 func TestCreate(t *testing.T) {
 	t.Run("success creation", func(t *testing.T) {
-		var oldCreate = create
-		defer func(){
-			create = oldCreate
-		}()
-
-		m := new(mockCreate)
-
 		ctx := context.Background()
 		rt := entity.CreateParams{
 			Title: "test title",
@@ -41,26 +31,19 @@ func TestCreate(t *testing.T) {
 			Completed: false,
 		}
 
-		newTodo := &entity.Todo{
-			ID: 18,
-			Title: "test title",
-			Description: "test desc",
-			Completed: false,
-			Created: utils.JSONTime(time.Now().UTC()),
-		}
+		var returnErr error = errors.New("something went wrong")
 
-		m.On("successCreate", ctx, rt).Return(newTodo, nil).Once()
-		create = m.successCreate
+		m := new(mockStorage)
+		m.On("Create", ctx, rt).Return(nil, returnErr).Once()
 
-		todo, err := Create(ctx, rt)
-		if err  != nil {
-			t.Errorf("unexpected error: %v", err)
+		todo, err := Create(ctx, rt, m)
+		if err  == nil {
+			t.Error("expected error but got nil")
 		}
 		m.AssertExpectations(t)
 
-		assert.Equal(t, rt.Title, todo.Title)
-		assert.Equal(t, rt.Description, todo.Description)
-		assert.Equal(t, rt.Completed, todo.Completed)
+		assert.Nil(t, todo)
+		assert.Equal(t, returnErr.Error(), err.Error())
 	})
 
 	t.Run("error creation", func(t *testing.T) {
@@ -69,7 +52,7 @@ func TestCreate(t *testing.T) {
 			create = oldCreate
 		}()
 
-		m := new(mockCreate)
+		m := new(mockStorage)
 		var errExpect = errors.New("something went wrong")
 		ctx := context.Background()
 		rt := entity.CreateParams{
@@ -78,10 +61,9 @@ func TestCreate(t *testing.T) {
 			Completed: false,
 		}
 
-		m.On("errorCreate", ctx, rt).Return(nil, errExpect).Once()
-		create = m.errorCreate
+		m.On("Create", ctx, rt).Return(nil, errExpect).Once()
 
-		todo, err := Create(ctx, rt)
+		todo, err := Create(ctx, rt, m)
 		if err  == nil {
 			t.Error("expected error but got nil", err)
 		}

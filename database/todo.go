@@ -14,6 +14,12 @@ import (
 
 var db *sql.DB
 
+type Storage struct {}
+
+func (s Storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
+	return Create(ctx, rt)
+}
+
 func init() {
 	var err error
 	db, err = sql.Open("sqlite3", "./foo.db")
