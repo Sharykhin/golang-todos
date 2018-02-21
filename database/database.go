@@ -22,6 +22,14 @@ func (s Storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.To
 	return Create(ctx, rt)
 }
 
+func (s Storage) Get(ctx context.Context, limit, offset int) ([]entity.Todo, error) {
+	return Get(ctx, limit, offset)
+}
+
+func (s Storage) Count(ctx context.Context) (int, error) {
+	return Count(ctx)
+}
+
 func init() {
 	var err error
 	db, err = sql.Open("sqlite3", "./foo.db")
