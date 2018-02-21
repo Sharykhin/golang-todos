@@ -23,7 +23,7 @@ type TodoGetter interface {
 }
 
 // Index returns list of todos
-func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
+func Index(ctx context.Context, limit, offset int, tg TodoGetter) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -46,18 +46,26 @@ func Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go getList(ctx, limit, offset, chTodos, chErr, &wg)
+	go getList(ctx, tg, limit, offset, chTodos, chErr, &wg)
 
 	wg.Add(1)
-	go getCount(ctx, chCount, chErr, &wg)
+	go getCount(ctx, tg, chCount, chErr, &wg)
 
 	go wait(&wg, done)
 
 	for {
 		select {
-		case t := <-chTodos:
+		case t, ok := <-chTodos:
+			if !ok {
+				chTodos = nil
+				continue
+			}
 			todos = t
-		case c := <-chCount:
+		case c, ok := <-chCount:
+			if !ok {
+				chCount = nil
+				continue
+			}
 			count = c
 		case err := <-chErr:
 			cancel()
@@ -75,10 +83,10 @@ func Create(ctx context.Context, rt entity.CreateParams, tc TodoCreator) (*entit
 	return tc.Create(ctx, rt)
 }
 
-func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
+func getList(ctx context.Context, tg TodoGetter, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer close(chTodos)
-	todos, err := db.Get(ctx, limit, offset)
+	todos, err := tg.Get(ctx, limit, offset)
 	if err != nil {
 		if ctx.Err() == context.Canceled {
 			return
@@ -89,10 +97,11 @@ func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Tod
 	}
 }
 
-func getCount(ctx context.Context, chCount chan<- int, chErr chan<- error, wg *sync.WaitGroup) {
+func getCount(ctx context.Context, tg TodoGetter, chCount chan<- int, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer close(chCount)
-	count, err := db.Count(ctx)
+	count, err := tg.Count(ctx)
+
 	if err != nil {
 		if ctx.Err() == context.Canceled {
 			return
