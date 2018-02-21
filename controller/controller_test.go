@@ -70,12 +70,7 @@ func TestCreate(t *testing.T) {
 	})
 
 	t.Run("error creation", func(t *testing.T) {
-		var oldCreate = create
-		defer func() {
-			create = oldCreate
-		}()
 
-		m := new(mockStorage)
 		var errExpect = errors.New("something went wrong")
 		ctx := context.Background()
 		rt := entity.CreateParams{
@@ -84,9 +79,14 @@ func TestCreate(t *testing.T) {
 			Completed:   false,
 		}
 
+		m := new(mockStorage)
 		m.On("Create", ctx, rt).Return(nil, errExpect).Once()
 
-		todo, err := Create(ctx, rt, m)
+		to := &todo{
+			storage: m,
+		}
+
+		todo, err := to.Create(ctx, rt)
 		if err == nil {
 			t.Error("expected error but got nil", err)
 		}
@@ -101,7 +101,8 @@ func TestIndex(t *testing.T) {
 	t.Run("success index", func(t *testing.T) {
 
 		ctx := context.Background()
-		cc, _ := context.WithCancel(ctx)
+		cc, cancel := context.WithCancel(ctx)
+		defer cancel()
 
 		tt := []entity.Todo{
 			{
@@ -118,15 +119,19 @@ func TestIndex(t *testing.T) {
 			},
 		}
 
-		mockS := new(mockStorage)
-		mockS.On("Get", cc, 10, 0).Return(tt, nil).Once()
-		mockS.On("Count", cc).Return(10, nil).Once()
+		m := new(mockStorage)
+		m.On("Get", cc, 10, 0).Return(tt, nil).Once()
+		m.On("Count", cc).Return(10, nil).Once()
 
-		ts, c, err := Index(ctx, 10, 0, mockS)
+		to := &todo{
+			storage: m,
+		}
+
+		ts, c, err := to.Index(ctx, 10, 0)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		mockS.AssertExpectations(t)
+		m.AssertExpectations(t)
 
 		assert.Equal(t, 10, c)
 		assert.Equal(t, 2, len(ts))
@@ -134,7 +139,8 @@ func TestIndex(t *testing.T) {
 
 	t.Run("error getting list", func(t *testing.T) {
 		ctx := context.Background()
-		cc, _ := context.WithCancel(ctx)
+		cc, cancel := context.WithCancel(ctx)
+		defer cancel()
 
 		tt := []entity.Todo{
 			{
@@ -153,12 +159,15 @@ func TestIndex(t *testing.T) {
 
 		exErr := errors.New("something went wrong")
 
-		mockS := new(mockStorage)
-		mockS.On("Get", cc, 10, 0).Return(tt, nil).Maybe()
-		mockS.On("Count", cc).Return(0, exErr).Once()
+		m := new(mockStorage)
+		m.On("Get", cc, 10, 0).Return(tt, nil).Maybe()
+		m.On("Count", cc).Return(0, exErr).Once()
 
-		ts, c, err := Index(ctx, 10, 0, mockS)
-		mockS.AssertExpectations(t)
+		to := &todo{
+			storage: m,
+		}
+		ts, c, err := to.Index(ctx, 10, 0)
+		m.AssertExpectations(t)
 
 		assert.Nil(t, ts)
 		assert.Equal(t, 0, c)
@@ -167,16 +176,21 @@ func TestIndex(t *testing.T) {
 	})
 	t.Run("error on count", func(t *testing.T) {
 		ctx := context.Background()
-		cc, _ := context.WithCancel(ctx)
+		cc, cancel := context.WithCancel(ctx)
+		defer cancel()
 
 		exErr := errors.New("something went wrong")
 
-		mockS := new(mockStorage)
-		mockS.On("Get", cc, 10, 0).Return(nil, exErr).Once()
-		mockS.On("Count", cc).Return(10, nil).Maybe()
+		m := new(mockStorage)
+		m.On("Get", cc, 10, 0).Return(nil, exErr).Once()
+		m.On("Count", cc).Return(10, nil).Maybe()
 
-		ts, c, err := Index(ctx, 10, 0, mockS)
-		mockS.AssertExpectations(t)
+		to := &todo{
+			storage: m,
+		}
+
+		ts, c, err := to.Index(ctx, 10, 0)
+		m.AssertExpectations(t)
 
 		assert.Nil(t, ts)
 		assert.Equal(t, 0, c)

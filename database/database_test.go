@@ -32,7 +32,7 @@ func TestCreate(t *testing.T) {
 			WithArgs(rt.Title, rt.Description, rt.Completed).
 			WillReturnResult(sqlmock.NewResult(1, 1))
 
-		nt, err := Create(cc, rt)
+		nt, err := Storage.Create(cc, rt)
 		if err != nil {
 			t.Errorf("error was not expected while inserting a new row: %v", err)
 		}
@@ -64,7 +64,7 @@ func TestCreate(t *testing.T) {
 			WithArgs(rt.Title, rt.Description, rt.Completed).
 			WillReturnResult(sqlmock.NewErrorResult(errors.New("could not insert row")))
 
-		nt, err := Create(cc, rt)
+		nt, err := Storage.Create(cc, rt)
 		if err := mockS.ExpectationsWereMet(); err != nil {
 			t.Errorf("there were unfulfilled expectations: %v", err)
 		}

@@ -17,9 +17,9 @@ type todo struct {
 
 // TodoCreator interface describes creation method
 type TodoProvider interface {
+	Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
 	Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
 	Count(ctx context.Context) (int, error)
-	Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
 }
 
 func init() {
@@ -27,7 +27,7 @@ func init() {
 }
 
 // Index returns list of todos
-func (t *todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
+func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -81,7 +81,7 @@ func (t *todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int
 }
 
 // Create creates new todo
-func (t *todo) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
+func (t todo) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 	// TODO: narrow case, how to provide the exact utc time
 	//rt.Created = time.Now().UTC()
 	return t.storage.Create(ctx, rt)
