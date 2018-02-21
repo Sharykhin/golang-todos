@@ -63,7 +63,7 @@ func Count(ctx context.Context) (int, error) {
 
 // Create creates new todo and returns new item
 func Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
-	res, err := db.ExecContext(ctx, "INSERT INTO todos(title, description,completed,created) VALUES (?, ?, ?, ?)", rt.Title, rt.Description, rt.Completed, rt.Created)
+	res, err := db.ExecContext(ctx, "INSERT INTO todos(title, description,completed) VALUES (?, ?, ?)", rt.Title, rt.Description, rt.Completed)
 	if err != nil {
 		return nil, fmt.Errorf("could not make insert statement: %v", err)
 	}
