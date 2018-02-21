@@ -6,16 +6,17 @@ import (
 	"fmt"
 	"log"
 
+	"time"
+
 	"github.com/Sharykhin/golang-todos/entity"
 	"github.com/Sharykhin/golang-todos/utils"
 	_ "github.com/mattn/go-sqlite3" // we need it!
-	"time"
 )
 
 var db *sql.DB
 
 // Storage struct is responsible for managing todos in a database
-type Storage struct {}
+type Storage struct{}
 
 // Create calls a package method for creating a new item
 func (s Storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
@@ -32,6 +33,7 @@ func (s Storage) Count(ctx context.Context) (int, error) {
 
 func init() {
 	var err error
+	// TODO: it's better to use env variable since we wil be able to change it for integration tests
 	db, err = sql.Open("sqlite3", "./foo.db")
 	if err != nil {
 		log.Fatalf("could not connect to database: %s", err)
