@@ -42,7 +42,7 @@ func (s storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.To
 }
 
 func (s storage) Get(ctx context.Context, limit, offset int) ([]entity.Todo, error) {
-	rows, err := db.QueryContext(ctx, "SELECT * FROM todos LIMIT ? OFFSET ?", limit, offset)
+	rows, err := db.QueryContext(ctx, "SELECT id, title, description, completed, created FROM todos LIMIT ? OFFSET ?", limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("could not make select statement: %v", err)
 	}
