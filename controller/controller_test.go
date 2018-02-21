@@ -135,7 +135,7 @@ func TestIndex(t *testing.T) {
 
 		mockS := new(mockStorage)
 		mockS.On("Get", cc, 10, 0).Return(nil, exErr).Once()
-		mockS.On("Count", cc).Return(10, nil).Once()
+		mockS.On("Count", cc).Return(10, nil).Maybe()
 
 		ts, c, err := Index(ctx, 10, 0, mockS)
 		mockS.AssertExpectations(t)
