@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log"
 
+	"time"
+
 	"github.com/Sharykhin/golang-todos/entity"
 	"github.com/Sharykhin/golang-todos/utils"
 	_ "github.com/mattn/go-sqlite3" // we need it!
-	"time"
 )
 
 var db *sql.DB

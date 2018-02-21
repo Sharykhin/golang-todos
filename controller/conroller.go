@@ -8,6 +8,7 @@ import (
 	db "github.com/Sharykhin/golang-todos/database"
 	"github.com/Sharykhin/golang-todos/entity"
 )
+
 //TODO: is it good way to move all package method to variables just allowing them to be mocked
 var create = db.Create
 
@@ -69,12 +70,13 @@ func getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Tod
 	defer close(chTodos)
 	todos, err := db.Get(ctx, limit, offset)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return
+		if chErr != nil {
+			chErr <- fmt.Errorf("could not get all todos: %s", err)
 		}
-		chErr <- fmt.Errorf("could not get all todos: %s", err)
 	} else {
-		chTodos <- todos
+		if chTodos != nil {
+			chTodos <- todos
+		}
 	}
 }
 
@@ -83,12 +85,13 @@ func getCount(ctx context.Context, chCount chan<- int, chErr chan<- error, wg *s
 	defer close(chCount)
 	count, err := db.Count(ctx)
 	if err != nil {
-		if ctx.Err() == context.Canceled {
-			return
+		if chErr != nil {
+			chErr <- fmt.Errorf("could not get count of todos: %s", err)
 		}
-		chErr <- fmt.Errorf("could not get count of todos: %s", err)
 	} else {
-		chCount <- count
+		if chCount != nil {
+			chCount <- count
+		}
 	}
 }
 

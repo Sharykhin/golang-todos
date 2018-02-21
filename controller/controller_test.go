@@ -1,14 +1,15 @@
 package controller
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
+
+	"github.com/Sharykhin/golang-todos/entity"
+	"github.com/Sharykhin/golang-todos/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/Sharykhin/golang-todos/entity"
-	"context"
-	"time"
-	"github.com/Sharykhin/golang-todos/utils"
-	"errors"
 )
 
 type mockCreate struct {
@@ -28,7 +29,7 @@ func (m mockCreate) errorCreate(ctx context.Context, rt entity.CreateParams) (*e
 func TestCreate(t *testing.T) {
 	t.Run("success creation", func(t *testing.T) {
 		var oldCreate = create
-		defer func(){
+		defer func() {
 			create = oldCreate
 		}()
 
@@ -36,24 +37,24 @@ func TestCreate(t *testing.T) {
 
 		ctx := context.Background()
 		rt := entity.CreateParams{
-			Title: "test title",
+			Title:       "test title",
 			Description: "test desc",
-			Completed: false,
+			Completed:   false,
 		}
 
 		newTodo := &entity.Todo{
-			ID: 18,
-			Title: "test title",
+			ID:          18,
+			Title:       "test title",
 			Description: "test desc",
-			Completed: false,
-			Created: utils.JSONTime(time.Now().UTC()),
+			Completed:   false,
+			Created:     utils.JSONTime(time.Now().UTC()),
 		}
 
 		m.On("successCreate", ctx, rt).Return(newTodo, nil).Once()
 		create = m.successCreate
 
 		todo, err := Create(ctx, rt)
-		if err  != nil {
+		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 		m.AssertExpectations(t)
@@ -65,7 +66,7 @@ func TestCreate(t *testing.T) {
 
 	t.Run("error creation", func(t *testing.T) {
 		var oldCreate = create
-		defer func(){
+		defer func() {
 			create = oldCreate
 		}()
 
@@ -73,16 +74,16 @@ func TestCreate(t *testing.T) {
 		var errExpect = errors.New("something went wrong")
 		ctx := context.Background()
 		rt := entity.CreateParams{
-			Title: "test title",
+			Title:       "test title",
 			Description: "test desc",
-			Completed: false,
+			Completed:   false,
 		}
 
 		m.On("errorCreate", ctx, rt).Return(nil, errExpect).Once()
 		create = m.errorCreate
 
 		todo, err := Create(ctx, rt)
-		if err  == nil {
+		if err == nil {
 			t.Error("expected error but got nil", err)
 		}
 		m.AssertExpectations(t)
