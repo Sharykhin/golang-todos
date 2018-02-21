@@ -1,12 +1,13 @@
 package controller
 
 import (
+	"context"
 	"testing"
+
+	"github.com/Sharykhin/golang-todos/entity"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/Sharykhin/golang-todos/entity"
-	"context"
-	"github.com/pkg/errors"
 )
 
 type mockStorage struct {
@@ -44,9 +45,9 @@ func TestCreate(t *testing.T) {
 	t.Run("success creation", func(t *testing.T) {
 		ctx := context.Background()
 		rt := entity.CreateParams{
-			Title: "test title",
+			Title:       "test title",
 			Description: "test desc",
-			Completed: false,
+			Completed:   false,
 		}
 
 		var returnErr error = errors.New("something went wrong")
@@ -54,8 +55,12 @@ func TestCreate(t *testing.T) {
 		m := new(mockStorage)
 		m.On("Create", ctx, rt).Return(nil, returnErr).Once()
 
-		todo, err := Create(ctx, rt, m)
-		if err  == nil {
+		to := &todo{
+			storage: m,
+		}
+
+		todo, err := to.Create(ctx, rt)
+		if err == nil {
 			t.Error("expected error but got nil")
 		}
 		m.AssertExpectations(t)
@@ -66,7 +71,7 @@ func TestCreate(t *testing.T) {
 
 	t.Run("error creation", func(t *testing.T) {
 		var oldCreate = create
-		defer func(){
+		defer func() {
 			create = oldCreate
 		}()
 
@@ -74,15 +79,15 @@ func TestCreate(t *testing.T) {
 		var errExpect = errors.New("something went wrong")
 		ctx := context.Background()
 		rt := entity.CreateParams{
-			Title: "test title",
+			Title:       "test title",
 			Description: "test desc",
-			Completed: false,
+			Completed:   false,
 		}
 
 		m.On("Create", ctx, rt).Return(nil, errExpect).Once()
 
 		todo, err := Create(ctx, rt, m)
-		if err  == nil {
+		if err == nil {
 			t.Error("expected error but got nil", err)
 		}
 		m.AssertExpectations(t)
@@ -100,16 +105,16 @@ func TestIndex(t *testing.T) {
 
 		tt := []entity.Todo{
 			{
-				ID: 19,
-				Title: "test title",
+				ID:          19,
+				Title:       "test title",
 				Description: "test description",
-				Completed: false,
+				Completed:   false,
 			},
 			{
-				ID: 20,
-				Title: "test title",
+				ID:          20,
+				Title:       "test title",
 				Description: "test description",
-				Completed: true,
+				Completed:   true,
 			},
 		}
 
@@ -127,22 +132,22 @@ func TestIndex(t *testing.T) {
 		assert.Equal(t, 2, len(ts))
 	})
 
-	t.Run("error getting list", func (t *testing.T) {
+	t.Run("error getting list", func(t *testing.T) {
 		ctx := context.Background()
 		cc, _ := context.WithCancel(ctx)
 
 		tt := []entity.Todo{
 			{
-				ID: 19,
-				Title: "test title",
+				ID:          19,
+				Title:       "test title",
 				Description: "test description",
-				Completed: false,
+				Completed:   false,
 			},
 			{
-				ID: 20,
-				Title: "test title",
+				ID:          20,
+				Title:       "test title",
 				Description: "test description",
-				Completed: true,
+				Completed:   true,
 			},
 		}
 
@@ -160,7 +165,7 @@ func TestIndex(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Equal(t, "could not get count of todos: something went wrong", err.Error())
 	})
-	t.Run("error on count", func (t *testing.T) {
+	t.Run("error on count", func(t *testing.T) {
 		ctx := context.Background()
 		cc, _ := context.WithCancel(ctx)
 

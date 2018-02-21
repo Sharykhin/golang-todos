@@ -4,8 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/Sharykhin/golang-todos/handler"
 	"fmt"
+
+	"github.com/Sharykhin/golang-todos/handler"
 )
 
 func main() {

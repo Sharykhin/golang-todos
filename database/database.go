@@ -5,10 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-
-	"time"
-
 	"os"
+	"time"
 
 	"github.com/Sharykhin/golang-todos/entity"
 	"github.com/Sharykhin/golang-todos/utils"
@@ -17,19 +15,21 @@ import (
 
 var db *sql.DB
 
-// Storage struct is responsible for managing todos in a database
-type Storage struct{}
+var Storage storage
+
+// storage struct is responsible for managing todos in a database
+type storage struct{}
 
 // Create calls a package method for creating a new item
-func (s Storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
+func (s storage) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 	return Create(ctx, rt)
 }
 
-func (s Storage) Get(ctx context.Context, limit, offset int) ([]entity.Todo, error) {
+func (s storage) Get(ctx context.Context, limit, offset int) ([]entity.Todo, error) {
 	return Get(ctx, limit, offset)
 }
 
-func (s Storage) Count(ctx context.Context) (int, error) {
+func (s storage) Count(ctx context.Context) (int, error) {
 	return Count(ctx)
 }
 

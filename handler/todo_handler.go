@@ -6,12 +6,11 @@ import (
 	"net/http"
 
 	"github.com/Sharykhin/golang-todos/controller"
-	"github.com/Sharykhin/golang-todos/entity"
 	"github.com/Sharykhin/golang-todos/database"
+	"github.com/Sharykhin/golang-todos/entity"
 )
 
 var (
-	todoIndex  = controller.Index
 	todoCreate = controller.Create
 )
 
@@ -26,7 +25,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		badRequest(w, fmt.Sprintf("could not parse offset param: %s", err))
 		return
 	}
-	todos, count, err := todoIndex(r.Context(), limit, offset, database.Storage{})
+	todos, count, err := controller.TODO.Index(r.Context(), limit, offset)
 	if err != nil {
 		serverError(w, err)
 		return
@@ -45,7 +44,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Pass the storage as parameter
-	t, err := todoCreate(r.Context(), rt, database.Storage{})
+	t, err := todoCreate(r.Context(), rt, database.storage{})
 	if err != nil {
 		serverError(w, err)
 		return

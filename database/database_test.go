@@ -3,14 +3,15 @@ package database
 import (
 	"context"
 	"testing"
-	"gopkg.in/DATA-DOG/go-sqlmock.v1"
+
 	"github.com/Sharykhin/golang-todos/entity"
-	"github.com/stretchr/testify/assert"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/DATA-DOG/go-sqlmock.v1"
 )
 
 func TestCreate(t *testing.T) {
-	t.Run("success creation", func (t *testing.T) {
+	t.Run("success creation", func(t *testing.T) {
 		var err error
 		var mockS sqlmock.Sqlmock
 		db, mockS, err = sqlmock.New()
@@ -22,14 +23,14 @@ func TestCreate(t *testing.T) {
 		ctx := context.Background()
 		cc, _ := context.WithCancel(ctx)
 		rt := entity.CreateParams{
-			Title: "test title",
+			Title:       "test title",
 			Description: "test description",
-			Completed: false,
+			Completed:   false,
 		}
 
 		mockS.ExpectExec("INSERT INTO todos").
 			WithArgs(rt.Title, rt.Description, rt.Completed).
-			WillReturnResult(sqlmock.NewResult(1,1))
+			WillReturnResult(sqlmock.NewResult(1, 1))
 
 		nt, err := Create(cc, rt)
 		if err != nil {
@@ -54,9 +55,9 @@ func TestCreate(t *testing.T) {
 		ctx := context.Background()
 		cc, _ := context.WithCancel(ctx)
 		rt := entity.CreateParams{
-			Title: "test title",
+			Title:       "test title",
 			Description: "test description",
-			Completed: false,
+			Completed:   false,
 		}
 
 		mockS.ExpectExec("INSERT INTO todos").

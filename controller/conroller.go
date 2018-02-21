@@ -8,22 +8,26 @@ import (
 	db "github.com/Sharykhin/golang-todos/database"
 	"github.com/Sharykhin/golang-todos/entity"
 )
-//TODO: is it good way to move all package method to variables just allowing them to be mocked
-var create = db.Create
+
+var TODO todo
+
+type todo struct {
+	storage TodoProvider
+}
 
 // TodoCreator interface describes creation method
-type TodoCreator interface {
+type TodoProvider interface {
+	Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
+	Count(ctx context.Context) (int, error)
 	Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
 }
 
-// TodoGetter interface describes methods for getting some todos
-type TodoGetter interface {
-	Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
-	Count(ctx context.Context) (int, error)
+func init() {
+	TODO.storage = db.Storage
 }
 
 // Index returns list of todos
-func Index(ctx context.Context, limit, offset int, tg TodoGetter) ([]entity.Todo, int, error) {
+func (t *todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -46,12 +50,12 @@ func Index(ctx context.Context, limit, offset int, tg TodoGetter) ([]entity.Todo
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go getList(ctx, tg, limit, offset, chTodos, chErr, &wg)
+	go t.getList(ctx, limit, offset, chTodos, chErr, &wg)
 
 	wg.Add(1)
-	go getCount(ctx, tg, chCount, chErr, &wg)
+	go t.getCount(ctx, chCount, chErr, &wg)
 
-	go wait(&wg, done)
+	go t.wait(&wg, done)
 
 	for {
 		select {
@@ -77,16 +81,16 @@ func Index(ctx context.Context, limit, offset int, tg TodoGetter) ([]entity.Todo
 }
 
 // Create creates new todo
-func Create(ctx context.Context, rt entity.CreateParams, tc TodoCreator) (*entity.Todo, error) {
+func (t *todo) Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error) {
 	// TODO: narrow case, how to provide the exact utc time
 	//rt.Created = time.Now().UTC()
-	return tc.Create(ctx, rt)
+	return t.storage.Create(ctx, rt)
 }
 
-func getList(ctx context.Context, tg TodoGetter, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
+func (t *todo) getList(ctx context.Context, limit, offset int, chTodos chan<- []entity.Todo, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer close(chTodos)
-	todos, err := tg.Get(ctx, limit, offset)
+	todos, err := t.storage.Get(ctx, limit, offset)
 	if err != nil {
 		if ctx.Err() == context.Canceled {
 			return
@@ -97,10 +101,10 @@ func getList(ctx context.Context, tg TodoGetter, limit, offset int, chTodos chan
 	}
 }
 
-func getCount(ctx context.Context, tg TodoGetter, chCount chan<- int, chErr chan<- error, wg *sync.WaitGroup) {
+func (t *todo) getCount(ctx context.Context, chCount chan<- int, chErr chan<- error, wg *sync.WaitGroup) {
 	defer wg.Done()
 	defer close(chCount)
-	count, err := tg.Count(ctx)
+	count, err := t.storage.Count(ctx)
 
 	if err != nil {
 		if ctx.Err() == context.Canceled {
@@ -112,7 +116,7 @@ func getCount(ctx context.Context, tg TodoGetter, chCount chan<- int, chErr chan
 	}
 }
 
-func wait(wg *sync.WaitGroup, done chan<- struct{}) {
+func (t *todo) wait(wg *sync.WaitGroup, done chan<- struct{}) {
 	wg.Wait()
 	done <- struct{}{}
 	close(done)
