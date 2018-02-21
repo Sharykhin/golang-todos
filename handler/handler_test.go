@@ -1,77 +1,79 @@
 package handler
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"sync"
 	"testing"
 
-	"github.com/Sharykhin/golang-todos/entity"
+	"fmt"
+
+	"log"
+
+	"os"
+
+	"github.com/Sharykhin/golang-todos/database"
 	"github.com/gavv/httpexpect"
+	"github.com/mattes/migrate"
+	"github.com/mattes/migrate/database/sqlite3"
+	_ "github.com/mattes/migrate/source/file"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestIndex(t *testing.T) {
-	savedTODOIndex := todoIndex
-	defer func() {
-		todoIndex = savedTODOIndex
-	}()
-	tt := []struct {
-		name         string
-		limitParam   string
-		offsetParam  string
-		todoFunc     func(ctx context.Context, limit, offset int) ([]entity.Todo, int, error)
-		expectStatus int
-	}{
-		{
-			name:         "bad limit",
-			limitParam:   "ds",
-			expectStatus: http.StatusBadRequest,
-		},
-		{
-			name:         "bad offset",
-			limitParam:   "1",
-			offsetParam:  "dfg",
-			expectStatus: http.StatusBadRequest,
-		},
-		{
-			name:        "in func",
-			limitParam:  "1",
-			offsetParam: "2",
-			todoFunc: func(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
-				return nil, 0, fmt.Errorf("test case")
-			},
-			expectStatus: http.StatusInternalServerError,
-		},
-		{
-			name:        "all ok",
-			limitParam:  "1",
-			offsetParam: "2",
-			todoFunc: func(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
-				return []entity.Todo{}, 12, nil
-			},
-			expectStatus: http.StatusOK,
-		},
-	}
-	var wg sync.WaitGroup
+type HandlerTestSuite struct {
+	suite.Suite
+}
 
-	for _, tc := range tt {
-		wg.Add(1)
-		t.Run(tc.name, func(t *testing.T) {
-			defer wg.Done()
-			todoIndex = tc.todoFunc
-			e := httpexpect.WithConfig(httpexpect.Config{
-				Client: &http.Client{
-					Transport: httpexpect.NewBinder(Handler()),
-					Jar:       httpexpect.NewJar(),
-				},
-				Reporter: httpexpect.NewAssertReporter(t),
-			})
-			e.Request(http.MethodGet, "/").
-				WithQuery("limit", tc.limitParam).
-				WithQuery("offset", tc.offsetParam).
-				Expect().Status(tc.expectStatus)
-		})
+var m *migrate.Migrate
+
+func (suite *HandlerTestSuite) SetupTest() {
+	fmt.Println("run migrations here")
+	driver, err := sqlite3.WithInstance(database.DB(), &sqlite3.Config{})
+	if err != nil {
+		log.Fatalf("could not get driveer: %v", err)
 	}
-	wg.Wait()
+
+	m, err = migrate.NewWithDatabaseInstance(
+		"file://migration",
+		"sqlite3", driver,
+	)
+
+	if err != nil {
+		log.Fatalf("could not get migrate instance: %v", err)
+	}
+	m.Up()
+}
+
+func (suite *HandlerTestSuite) TearDownTest() {
+	m.Down()
+	os.Remove(os.Getenv("DB_SOURCE"))
+}
+
+func (suite *HandlerTestSuite) TestCreateEndpoint() {
+	fmt.Println("Run integration test for creation")
+	suite.T().Run("success creation", func(t *testing.T) {
+		e := httpexpect.WithConfig(httpexpect.Config{
+			Client: &http.Client{
+				Transport: httpexpect.NewBinder(Handler()),
+				Jar:       httpexpect.NewJar(),
+			},
+			Reporter: httpexpect.NewAssertReporter(t),
+		})
+
+		todoRequest := map[string]interface{}{
+			"title":       "test title",
+			"description": "test description",
+		}
+
+		obj := e.Request(http.MethodPost, "/create").
+			WithJSON(todoRequest).
+			Expect().Status(http.StatusCreated).JSON().Object()
+
+		obj.Value("success").Equal(true)
+		obj.Value("error").Equal("")
+		obj.Value("meta").Equal(nil)
+		obj.Value("data").Object().Value("title").Equal("test title")
+	})
+}
+
+func TestCreateEndpoint(t *testing.T) {
+	suite.Run(t, new(HandlerTestSuite))
 }
