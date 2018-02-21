@@ -1,30 +1,55 @@
 package handler
 
 import (
-	"log"
 	"net/http"
 	"testing"
 
-	"database/sql"
+	"fmt"
 
+	"log"
+
+	"os"
+
+	"github.com/Sharykhin/golang-todos/database"
 	"github.com/gavv/httpexpect"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/mattes/migrate"
+	"github.com/mattes/migrate/database/sqlite3"
+	_ "github.com/mattes/migrate/source/file"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestCreate(t *testing.T) {
-	savedTODOIndex := todoIndex
-	defer func() {
-		todoIndex = savedTODOIndex
-	}()
+type HandlerTestSuite struct {
+	suite.Suite
+}
 
-	// TODO: for integration tests this causes an issue. Since sql works inside database package and Storage uses internal link to *sql.DB
-	db, err := sql.Open("sqlite3", "./foo_test.db")
+var m *migrate.Migrate
+
+func (suite *HandlerTestSuite) SetupTest() {
+	fmt.Println("run migrations here")
+	driver, err := sqlite3.WithInstance(database.DB(), &sqlite3.Config{})
 	if err != nil {
-		log.Fatalf("could not connect to database: %s", err)
+		log.Fatalf("could not get driveer: %v", err)
 	}
 
-	t.Run("success creation", func(t *testing.T) {
-		todoIndex = tc.todoFunc
+	m, err = migrate.NewWithDatabaseInstance(
+		"file://../migration",
+		"sqlite3", driver,
+	)
+
+	if err != nil {
+		log.Fatalf("could not get migrate instance: %v", err)
+	}
+	m.Up()
+}
+
+func (suite *HandlerTestSuite) TearDownTest() {
+	m.Down()
+	os.Remove(os.Getenv("DB_SOURCE"))
+}
+
+func (suite *HandlerTestSuite) TestCreate() {
+	fmt.Println("Run integration test for creation")
+	suite.T().Run("success creation", func(t *testing.T) {
 		e := httpexpect.WithConfig(httpexpect.Config{
 			Client: &http.Client{
 				Transport: httpexpect.NewBinder(Handler()),
@@ -43,5 +68,12 @@ func TestCreate(t *testing.T) {
 			Expect().Status(http.StatusCreated).JSON().Object()
 
 		obj.Value("success").Equal(true)
+		obj.Value("error").Equal("")
+		obj.Value("meta").Equal(nil)
+		obj.Value("data").Object().Value("title").Equal("test title")
 	})
+}
+
+func TestCreate(t *testing.T) {
+	suite.Run(t, new(HandlerTestSuite))
 }

@@ -8,6 +8,8 @@ import (
 
 	"time"
 
+	"os"
+
 	"github.com/Sharykhin/golang-todos/entity"
 	"github.com/Sharykhin/golang-todos/utils"
 	_ "github.com/mattn/go-sqlite3" // we need it!
@@ -31,10 +33,18 @@ func (s Storage) Count(ctx context.Context) (int, error) {
 	return Count(ctx)
 }
 
+// DB returns current instance of database
+func DB() *sql.DB {
+	return db
+}
+
 func init() {
 	var err error
-	// TODO: it's better to use env variable since we wil be able to change it for integration tests
-	db, err = sql.Open("sqlite3", "./foo.db")
+	dbSource := os.Getenv("DB_SOURCE")
+	if dbSource == "" {
+		dbSource = "./foo.db"
+	}
+	db, err = sql.Open("sqlite3", dbSource)
 	if err != nil {
 		log.Fatalf("could not connect to database: %s", err)
 	}

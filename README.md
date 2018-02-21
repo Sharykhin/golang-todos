@@ -23,6 +23,14 @@ docker run -p 8082:8082 golang-todoapp --rm golang-todoapp
 
 3. Go to http://localhost:8082
 
+Testing:
+-------
+
+For integration tests use another DB_SOURCE:
+```bash
+DB_SOURCE="foo_test.db" go test ./handler/ -v
+```
+
 API:
 ----
 
