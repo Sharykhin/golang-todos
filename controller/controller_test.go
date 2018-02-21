@@ -131,6 +131,39 @@ func TestIndex(t *testing.T) {
 		ctx := context.Background()
 		cc, _ := context.WithCancel(ctx)
 
+		tt := []entity.Todo{
+			{
+				ID: 19,
+				Title: "test title",
+				Description: "test description",
+				Completed: false,
+			},
+			{
+				ID: 20,
+				Title: "test title",
+				Description: "test description",
+				Completed: true,
+			},
+		}
+
+		exErr := errors.New("something went wrong")
+
+		mockS := new(mockStorage)
+		mockS.On("Get", cc, 10, 0).Return(tt, nil).Maybe()
+		mockS.On("Count", cc).Return(0, exErr).Once()
+
+		ts, c, err := Index(ctx, 10, 0, mockS)
+		mockS.AssertExpectations(t)
+
+		assert.Nil(t, ts)
+		assert.Equal(t, 0, c)
+		assert.NotNil(t, err)
+		assert.Equal(t, "could not get count of todos: something went wrong", err.Error())
+	})
+	t.Run("error on count", func (t *testing.T) {
+		ctx := context.Background()
+		cc, _ := context.WithCancel(ctx)
+
 		exErr := errors.New("something went wrong")
 
 		mockS := new(mockStorage)
