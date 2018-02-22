@@ -31,8 +31,9 @@ func (suite *HandlerTestSuite) SetupTest() {
 		log.Fatalf("could not get driveer: %v", err)
 	}
 
+	// TODO: I don't like passes with relative journey
 	m, err = migrate.NewWithDatabaseInstance(
-		"file://migration",
+		"file://../migration",
 		"sqlite3", driver,
 	)
 
