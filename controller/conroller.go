@@ -9,22 +9,26 @@ import (
 	"github.com/Sharykhin/golang-todos/entity"
 )
 
-var TODO todo
+var (
+	TODO = todo{storage: db.Storage}
+)
 
-type todo struct {
-	storage TodoProvider
-}
+type (
+	// TodoCreator interface describes creation method
+	TodoProvider interface {
+		Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
+		Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
+		Count(ctx context.Context) (int, error)
+	}
 
-// TodoCreator interface describes creation method
-type TodoProvider interface {
-	Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
-	Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
-	Count(ctx context.Context) (int, error)
-}
+	todo struct {
+		storage TodoProvider
+	}
+)
 
-func init() {
-	TODO.storage = db.Storage
-}
+//func init() {
+//	TODO.storage = db.Storage
+//}
 
 // Index returns list of todos
 func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
@@ -50,11 +54,13 @@ func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int,
 	var wg sync.WaitGroup
 
 	wg.Add(1)
+	// TODO: here we can apply patter when method create a channel run gorouting and return read-only channel
 	go t.getList(ctx, limit, offset, chTodos, chErr, &wg)
 
 	wg.Add(1)
+	// TODO: here we can apply patter when method create a channel run gorouting and return read-only channel
 	go t.getCount(ctx, chCount, chErr, &wg)
-
+	// TODO: don't you think that it's better to check nil channel in for loop?
 	go t.wait(&wg, done)
 
 	for {
