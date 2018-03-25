@@ -26,10 +26,6 @@ type (
 	}
 )
 
-//func init() {
-//	TODO.storage = db.Storage
-//}
-
 // Index returns list of todos
 func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
