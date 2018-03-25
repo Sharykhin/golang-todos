@@ -26,6 +26,47 @@ type (
 	}
 )
 
+func (t todo) Index2(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	chTodos, chErr := getList(ctx, limit, offset, t.storage)
+	chTotal, chTotalErr := getTotal(ctx, t.storage)
+
+	var todos []entity.Todo
+	var total int
+
+	for {
+		if chTodos == nil && chTotal == nil {
+			return todos, total, nil
+		}
+		select {
+		case gotTodos, ok := <-chTodos:
+			if !ok {
+				chTodos = nil
+				continue
+			}
+			todos = gotTodos
+		case gotErr, ok := <-chErr:
+			if ok {
+				cancel()
+				return nil, 0, gotErr
+			}
+		case gotTotal, ok := <-chTotal:
+			if !ok {
+				chTotal = nil
+				continue
+			}
+			total = gotTotal
+		case gotErr, ok := <-chTotalErr:
+			if ok {
+				cancel()
+				return nil, 0, gotErr
+			}
+		}
+	}
+}
+
 // Index returns list of todos
 func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -80,6 +121,43 @@ func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int,
 			return todos, count, nil
 		}
 	}
+}
+
+func getList(ctx context.Context, limit, offset int, storage TodoProvider) (<-chan []entity.Todo, <-chan error) {
+	chTodos := make(chan []entity.Todo)
+	chErr := make(chan error)
+
+	go func(ctx context.Context, chTodos chan<- []entity.Todo, chErr chan<- error, storage TodoProvider) {
+		defer close(chTodos)
+		defer close(chErr)
+		todos, err := storage.Get(ctx, limit, offset)
+		if err != nil {
+			chErr <- err
+			return
+		}
+		chTodos <- todos
+	}(ctx, chTodos, chErr, storage)
+
+	return chTodos, chErr
+}
+
+func getTotal(ctx context.Context, storage TodoProvider) (<-chan int, <-chan error) {
+	chTotal := make(chan int)
+	chErr := make(chan error)
+
+	go func(ctx context.Context, chTotal chan<- int, chErr chan<- error, storage TodoProvider) {
+		defer close(chTotal)
+		defer close(chErr)
+		total, err := storage.Count(ctx)
+		if err != nil {
+			chErr <- err
+			return
+		}
+		chTotal <- total
+
+	}(ctx, chTotal, chErr, storage)
+
+	return chTotal, chErr
 }
 
 // Create creates new todo

@@ -20,7 +20,7 @@ func index(w http.ResponseWriter, r *http.Request) {
 		badRequest(w, fmt.Sprintf("could not parse offset param: %s", err))
 		return
 	}
-	todos, count, err := controller.TODO.Index(r.Context(), limit, offset)
+	todos, count, err := controller.TODO.Index2(r.Context(), limit, offset)
 	if err != nil {
 		serverError(w, err)
 		return

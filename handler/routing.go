@@ -10,7 +10,7 @@ import (
 // Handler holds project routing
 func Handler() http.Handler {
 	r := mux.NewRouter()
-	r.Handle("/", middleware.Chain(http.HandlerFunc(index), middleware.Logger))
-	r.Handle("/create", middleware.Chain(http.HandlerFunc(create), middleware.Logger))
+	r.Handle("/", middleware.Chain(http.HandlerFunc(index), middleware.Logger)).Methods("GET")
+	r.Handle("/", middleware.Chain(http.HandlerFunc(create), middleware.Logger)).Methods("POST")
 	return r
 }
