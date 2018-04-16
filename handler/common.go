@@ -14,10 +14,23 @@ type response struct {
 	Meta    interface{} `json:"meta"`
 }
 
+type successResponse struct {
+	response
+	Error error `json:"error"`
+}
+
 func newJSON(w http.ResponseWriter, header int, res response) []byte {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(header)
-	r, err := json.Marshal(&res)
+	var r []byte
+	var err error
+	if res.Success == true {
+		successR := successResponse{response: res, Error: nil}
+		r, err = json.Marshal(&successR)
+	} else {
+		r, err = json.Marshal(&res)
+	}
+
 	if err != nil {
 		log.Printf("%v", res)
 		log.Fatalf("could not marshal json response: %s", err)
@@ -27,7 +40,10 @@ func newJSON(w http.ResponseWriter, header int, res response) []byte {
 
 func success(w http.ResponseWriter, data interface{}, meta interface{}) {
 	res := newJSON(w, http.StatusOK, response{Success: true, Data: data, Meta: meta})
-	w.Write(res)
+	_, err := w.Write(res)
+	if err != nil {
+		log.Fatalf("Could not sent a response: %v", err)
+	}
 }
 
 func successCreated(w http.ResponseWriter, data interface{}) {

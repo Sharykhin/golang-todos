@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	TODO = todo{storage: db.Storage}
+	// TODOCtrl provides references to a private struct that handles all request around items
+	TODOCtrl = todo{storage: db.Storage}
 )
 
 type (
@@ -24,7 +25,95 @@ type (
 	todo struct {
 		storage TodoProvider
 	}
+
+	listResult struct {
+		err  error
+		list []entity.Todo
+	}
+
+	countResult struct {
+		err   error
+		count int
+	}
 )
+
+func (t todo) Index3(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	chList := t.runList(ctx, limit, offset)
+	chCount := t.runCount(ctx)
+
+	var todosList []entity.Todo
+	var count int
+
+	for {
+		if chList == nil && chCount == nil {
+			return todosList, count, nil
+		}
+		select {
+		case listResult, ok := <-chList:
+			if !ok {
+				chList = nil
+				continue
+			}
+			if listResult.err != nil {
+				cancel()
+				return nil, 0, listResult.err
+			}
+			todosList = listResult.list
+		case countResult, ok := <-chCount:
+			if !ok {
+				chCount = nil
+				continue
+			}
+			if countResult.err != nil {
+				cancel()
+				return nil, 0, countResult.err
+			}
+			count = countResult.count
+		}
+	}
+
+}
+
+func (t todo) runList(ctx context.Context, limit, offset int) <-chan listResult {
+	chListResult := make(chan listResult)
+	go func() {
+		defer close(chListResult)
+		var lr listResult
+		list, err := t.storage.Get(ctx, limit, offset)
+		if err != nil {
+			lr.err = err
+		}
+		lr.list = list
+		select {
+		case <-ctx.Done():
+			return
+		case chListResult <- lr:
+		}
+	}()
+	return chListResult
+}
+
+func (t todo) runCount(ctx context.Context) <-chan countResult {
+	chCountResult := make(chan countResult)
+	go func() {
+		defer close(chCountResult)
+		var cr countResult
+		count, err := t.storage.Count(ctx)
+		if err != nil {
+			cr.err = err
+		}
+		cr.count = count
+		select {
+		case <-ctx.Done():
+			return
+		case chCountResult <- cr:
+		}
+	}()
+	return chCountResult
+}
 
 func (t todo) Index2(ctx context.Context, limit, offset int) ([]entity.Todo, int, error) {
 	ctx, cancel := context.WithCancel(ctx)
