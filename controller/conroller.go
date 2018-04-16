@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/Sharykhin/golang-todos/contract"
 	db "github.com/Sharykhin/golang-todos/database"
 	"github.com/Sharykhin/golang-todos/entity"
 )
@@ -15,15 +16,8 @@ var (
 )
 
 type (
-	// TodoCreator interface describes creation method
-	TodoProvider interface {
-		Create(ctx context.Context, rt entity.CreateParams) (*entity.Todo, error)
-		Get(ctx context.Context, limit, offset int) ([]entity.Todo, error)
-		Count(ctx context.Context) (int, error)
-	}
-
 	todo struct {
-		storage TodoProvider
+		storage contract.TodoProvider
 	}
 
 	listResult struct {
@@ -212,11 +206,11 @@ func (t todo) Index(ctx context.Context, limit, offset int) ([]entity.Todo, int,
 	}
 }
 
-func getList(ctx context.Context, limit, offset int, storage TodoProvider) (<-chan []entity.Todo, <-chan error) {
+func getList(ctx context.Context, limit, offset int, storage contract.TodoProvider) (<-chan []entity.Todo, <-chan error) {
 	chTodos := make(chan []entity.Todo)
 	chErr := make(chan error)
 
-	go func(ctx context.Context, chTodos chan<- []entity.Todo, chErr chan<- error, storage TodoProvider) {
+	go func(ctx context.Context, chTodos chan<- []entity.Todo, chErr chan<- error, storage contract.TodoProvider) {
 		defer close(chTodos)
 		defer close(chErr)
 		todos, err := storage.Get(ctx, limit, offset)
@@ -230,11 +224,11 @@ func getList(ctx context.Context, limit, offset int, storage TodoProvider) (<-ch
 	return chTodos, chErr
 }
 
-func getTotal(ctx context.Context, storage TodoProvider) (<-chan int, <-chan error) {
+func getTotal(ctx context.Context, storage contract.TodoProvider) (<-chan int, <-chan error) {
 	chTotal := make(chan int)
 	chErr := make(chan error)
 
-	go func(ctx context.Context, chTotal chan<- int, chErr chan<- error, storage TodoProvider) {
+	go func(ctx context.Context, chTotal chan<- int, chErr chan<- error, storage contract.TodoProvider) {
 		defer close(chTotal)
 		defer close(chErr)
 		total, err := storage.Count(ctx)

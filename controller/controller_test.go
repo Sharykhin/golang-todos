@@ -182,7 +182,7 @@ func TestCreate(t *testing.T) {
 	//})
 }
 
-func TestIndex(t *testing.T) {
+func TestTodo_Index3(t *testing.T) {
 
 	m := new(mockStorage)
 	defer m.AssertExpectations(t)
@@ -210,8 +210,11 @@ func TestIndex(t *testing.T) {
 		},
 	}
 
+	expectedError := errors.New("something went wring")
+
 	m.On("Get", cc, 10, 0).Return(expectedList, nil).Once()
 	m.On("Count", cc).Return(10, nil).Once()
+	m.On("Get", cc, 0, 0).Return(nil, expectedError).Once()
 
 	tt := []struct {
 		name          string
@@ -229,6 +232,14 @@ func TestIndex(t *testing.T) {
 			expectedCount: 10,
 			expectedErr:   nil,
 		},
+		{
+			name:          "bad list",
+			limit:         0,
+			offset:        0,
+			expectedList:  nil,
+			expectedCount: 0,
+			expectedErr:   expectedError,
+		},
 	}
 
 	var wg sync.WaitGroup
@@ -236,7 +247,7 @@ func TestIndex(t *testing.T) {
 		wg.Add(1)
 		go t.Run(tc.name, func(t *testing.T) {
 			defer wg.Done()
-			actual, count, err := to.Index(ctx, tc.limit, tc.offset)
+			actual, count, err := to.Index3(ctx, tc.limit, tc.offset)
 
 			require.Equal(t, tc.expectedList, actual)
 			require.Equal(t, tc.expectedCount, count)
